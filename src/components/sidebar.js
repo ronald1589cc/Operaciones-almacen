@@ -1,58 +1,64 @@
 // ============================================================
 // Componente: Sidebar
-// Menú de navegación lateral con perfil de usuario y control de tema.
+// Menú de navegación lateral con control de tema.
 // ============================================================
 
 import { toggleTheme } from '../theme.js';
-import { getCurrentSession, getUserProfile, signOut } from '../services/authService.js';
-import { showToast } from './toast.js';
+import { getCurrentSession, getUserProfile } from '../services/authService.js';
 
 const SECTIONS = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'inventory', label: 'Inventario' },
-  { id: 'movements', label: 'Movimientos' },
-  { id: 'locations', label: 'Almacén' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { id: 'inventory', label: 'Inventario', icon: 'Boxes' },
+  { id: 'movements', label: 'Movimientos', icon: 'ArrowLeftRight' },
+  { id: 'locations', label: 'Almacén', icon: 'MapPin' },
+  { id: 'movementsAudit', label: 'Auditoría de Movimientos', icon: 'History', adminOnly: true },
+  { id: 'itemsAudit', label: 'Auditoría de Artículos', icon: 'FileClock', adminOnly: true },
 ];
 
 export function renderSidebar(container, onNavigate) {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
+  // Crear el fondo oscuro si aún no existe en el DOM
+  if (!document.querySelector('#sidebar-overlay')) {
+    const overlay = document.createElement('div');
+    overlay.id = 'sidebar-overlay';
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', closeMobileSidebar);
+  }
+
   container.innerHTML = `
-    <div class="sidebar-brand">
-      <div class="sidebar-brand-title">Almacén Control</div>
-      <div class="sidebar-brand-subtitle">INBOUND / OUTBOUND</div>
-    </div>
     <nav class="sidebar-nav">
       ${SECTIONS.map(
-        (s) => `<button class="sidebar-link" data-route="${s.id}">${s.label}</button>`
+        (s) =>
+          `<button class="sidebar-link" data-route="${s.id}" ${s.adminOnly ? 'data-admin-only' : ''}>
+            <i data-lucide="${s.icon}"></i>${s.label}
+          </button>`
       ).join('')}
     </nav>
     <div class="sidebar-footer">
-      <div id="sidebar-user" class="sidebar-user"></div>
-
       <button id="theme-toggle" class="theme-toggle-btn" aria-label="Cambiar tema">
         <span class="theme-icon">${isLight ? '☀️' : '🌙'}</span>
         <span class="theme-label">${isLight ? 'Modo Claro' : 'Modo Oscuro'}</span>
       </button>
-
-      <button id="logout-btn" class="btn btn-ghost btn-sm btn-logout" title="Cerrar sesión">
-        <span class="btn-icon">🚪</span>
-        <span>Cerrar sesión</span>
-      </button>
     </div>
   `;
 
-  // Navegación en enlaces del sidebar
+  // Navegación en enlaces del sidebar (cierra el menú en móvil tras hacer clic)
   container.querySelectorAll('.sidebar-link').forEach((btn) => {
-    btn.addEventListener('click', () => onNavigate(btn.dataset.route));
+    btn.addEventListener('click', () => {
+      onNavigate(btn.dataset.route);
+      closeMobileSidebar();
+    });
   });
 
-  // Marcar enlace activo y actualizar datos de usuario al cambiar de ruta
+  // Marcar enlace activo y verificar accesos admin
   document.addEventListener('route-changed', (e) => {
     container.querySelectorAll('.sidebar-link').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.route === e.detail.name);
     });
-    refreshSidebarUser(container);
+    updateAdminAccess(container);
   });
 
   // Botón de alternar tema claro / oscuro
@@ -70,51 +76,25 @@ export function renderSidebar(container, onNavigate) {
     }
   });
 
-  // Botón de Cerrar Sesión
-  const logoutBtn = container.querySelector('#logout-btn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        await signOut();
-        showToast('Sesión cerrada correctamente', 'ok');
-        onNavigate('login');
-      } catch (err) {
-        showToast(err.message || 'Error al cerrar sesión', 'error');
-      }
-    });
-  }
-
-  // Carga inicial del perfil de usuario
-  refreshSidebarUser(container);
+  updateAdminAccess(container);
 }
 
-async function refreshSidebarUser(container) {
-  const userBox = container.querySelector('#sidebar-user');
-  const logoutBtn = container.querySelector('#logout-btn');
-  if (!userBox) return;
+function closeMobileSidebar() {
+  document.querySelector('.sidebar')?.classList.remove('open');
+  document.querySelector('#sidebar-overlay')?.classList.remove('show');
+}
 
+async function updateAdminAccess(container) {
+  const adminLinks = container.querySelectorAll('.sidebar-link[data-admin-only]');
   const session = await getCurrentSession();
   if (!session) {
-    userBox.innerHTML = '';
-    if (logoutBtn) logoutBtn.style.display = 'none';
+    adminLinks.forEach((link) => (link.style.display = 'none'));
     return;
   }
 
-  if (logoutBtn) logoutBtn.style.display = 'flex';
   const profile = await getUserProfile(session.user.id);
-  const fullName = profile?.full_name || session.user.email?.split('@')[0] || 'Operario';
-  const role = profile?.role === 'admin' ? 'ADMIN' : 'OPERADOR';
-  const roleBadgeClass = profile?.role === 'admin' ? 'role-admin' : 'role-operator';
-
-  userBox.innerHTML = `
-    <div class="user-card">
-      <div class="user-avatar">👤</div>
-      <div class="user-details">
-        <div class="user-name" title="${fullName}">${fullName}</div>
-        <span class="user-badge ${roleBadgeClass}">${role}</span>
-      </div>
-    </div>
-  `;
+  const isAdmin = profile?.role === 'admin';
+  adminLinks.forEach((link) => (link.style.display = isAdmin ? '' : 'none'));
 }
 
 function updateThemeButton(btn, theme) {

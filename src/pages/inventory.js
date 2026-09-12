@@ -4,8 +4,9 @@
 // categoría, proveedor y estado de stock + CRUD de artículos.
 // ============================================================
 
-import { createInventoryRecord, listInventoryWithItems } from '../services/inventoryService.js';
+import { createInventoryRecord, listInventoryWithItems, updateInventoryRecord } from '../services/inventoryService.js';
 import { createItem, updateItem, deleteItem } from '../services/itemsService.js';
+import { listLocations } from '../services/locationsService.js';
 import { dataTableHtml, bindDataTablePagination } from '../components/dataTable.js';
 import { buttonHtml } from '../components/button.js';
 import { openModal, closeModal } from '../components/modal.js';
@@ -22,7 +23,6 @@ export async function renderInventory(container) {
 
   container.innerHTML = `
     <h2 class="page-title">Inventario</h2>
-
     <div class="toolbar">
       <input type="text" id="search-input" class="input" placeholder="Buscar por artículo o SKU..." />
       <select id="category-filter" class="input"><option value="">Todas las categorías</option></select>
@@ -34,13 +34,21 @@ export async function renderInventory(container) {
       </select>
       ${buttonHtml('+ Nuevo artículo', { extraAttrs: 'id="new-item-btn"' })}
     </div>
-
     <div id="table-container"></div>
   `;
 
   tableContainerEl = container.querySelector('#table-container');
   populateFilterOptions(container);
   renderTable(allRows);
+
+  // Redibujar la tabla automáticamente cuando se redimensiona la ventana
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      applyFilters(container);
+    }, 150);
+  });
 
   container.querySelector('#search-input').addEventListener('input', () => applyFilters(container));
   container.querySelector('#category-filter').addEventListener('change', () => applyFilters(container));
@@ -106,6 +114,7 @@ function renderTable(rows, page = tablePage) {
     pagination: { page: tablePage },
     actions: (r) => `
       ${buttonHtml('Editar', { variant: 'ghost', size: 'sm', extraAttrs: `data-edit="${r.id}"` })}
+      ${buttonHtml('Editar stock', { variant: 'ghost', size: 'sm', extraAttrs: `data-edit-stock="${r.id}"` })}
       ${buttonHtml('Eliminar', { variant: 'danger', size: 'sm', extraAttrs: `data-delete="${r.item_id}"` })}
     `,
   });
@@ -116,6 +125,13 @@ function renderTable(rows, page = tablePage) {
     btn.addEventListener('click', () => {
       const row = allRows.find((r) => r.id === btn.dataset.edit);
       openItemForm(row);
+    });
+  });
+
+  tableContainerEl.querySelectorAll('[data-edit-stock]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = allRows.find((r) => r.id === btn.dataset.editStock);
+      openStockForm(row);
     });
   });
 
@@ -180,6 +196,64 @@ function openItemForm(row = null) {
       closeModal();
       allRows = await listInventoryWithItems();
       tablePage = 1;
+      renderTable(allRows);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+/**
+ * Modal para "Modificar información del inventario": ubicación,
+ * stock mínimo y stock máximo. A propósito NO incluye "quantity" —
+ * esa cantidad solo debe cambiar mediante movimientos aprobados
+ * (Entrada/Salida/Ajuste), para no romper la trazabilidad del
+ * workflow de aprobación.
+ */
+async function openStockForm(row) {
+  const locations = await listLocations();
+
+  openModal(`
+    <h3>Editar stock — ${row.inventory_items?.sku ?? ''}</h3>
+    <p class="text-dim" style="font-size: 13px; margin-top: -8px;">
+      La cantidad (${formatNumber(row.quantity)} unidades) no se edita aquí — solo cambia
+      mediante movimientos aprobados (Entrada/Salida/Ajuste), para mantener la trazabilidad.
+    </p>
+    <form id="stock-form" class="form">
+      <label>Ubicación
+        <select name="location_id" class="input">
+          <option value="">Sin asignar</option>
+          ${locations
+            .map(
+              (loc) =>
+                `<option value="${loc.id}" ${loc.id === row.location_id ? 'selected' : ''}>${loc.code} — ${loc.zone ?? ''}</option>`
+            )
+            .join('')}
+        </select>
+      </label>
+      <label>Stock mínimo <input name="min_stock" type="number" min="0" class="input" value="${row.min_stock ?? 0}" required /></label>
+      <label>Stock máximo <input name="max_stock" type="number" min="0" class="input" value="${row.max_stock ?? ''}" /></label>
+
+      <div class="modal-actions">
+        ${buttonHtml('Cancelar', { variant: 'ghost', extraAttrs: 'data-close-modal' })}
+        ${buttonHtml('Guardar cambios', { type: 'submit' })}
+      </div>
+    </form>
+  `);
+
+  document.getElementById('stock-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.target));
+
+    try {
+      await updateInventoryRecord(row.id, {
+        location_id: formData.location_id || null,
+        min_stock: Number(formData.min_stock) || 0,
+        max_stock: formData.max_stock ? Number(formData.max_stock) : null,
+      });
+      showToast('Información de inventario actualizada');
+      closeModal();
+      allRows = await listInventoryWithItems();
       renderTable(allRows);
     } catch (err) {
       showToast(err.message, 'error');

@@ -24,16 +24,87 @@ function clampPage(page, totalPages) {
   return Math.min(Math.max(Number(page) || 1, 1), totalPages);
 }
 
+function getPaginationRange(currentPage, totalPages, delta = 1) {
+  const range = [];
+  const rangeWithDots = [];
+  let last;
+
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 || 
+      i === totalPages || 
+      (i >= currentPage - delta && i <= currentPage + delta)
+    ) {
+      range.push(i);
+    }
+  }
+
+  for (let i of range) {
+    if (last) {
+      if (i - last === 2) {
+        rangeWithDots.push(last + 1);
+      } else if (i - last !== 1) {
+        rangeWithDots.push('...');
+      }
+    }
+    rangeWithDots.push(i);
+    last = i;
+  }
+
+  return rangeWithDots;
+}
+
+// Reemplaza tu función paginationHtml actual por esta:
 function paginationHtml({ currentPage, totalPages, totalRows, startRow, endRow }) {
   if (totalPages <= 1) return '';
+
+  const pageRange = getPaginationRange(currentPage, totalPages);
+
+  const pagesButtonsHtml = pageRange
+    .map((page) => {
+      if (page === '...') {
+        return `<span class="data-table-page-ellipsis">...</span>`;
+      }
+
+      const isActive = page === currentPage;
+      return `
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-sm ${isActive ? 'active' : ''}" 
+          data-table-page="${page}" 
+          ${isActive ? 'disabled' : ''}
+        >
+          ${page}
+        </button>
+      `;
+    })
+    .join('');
 
   return `
     <div class="data-table-pagination" aria-label="Paginacion de tabla">
       <span class="data-table-page-info">${startRow}-${endRow} de ${totalRows}</span>
       <div class="data-table-page-actions">
-        <button type="button" class="btn btn-ghost btn-sm" data-table-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>Anterior</button>
-        <span class="data-table-page-current">${currentPage} / ${totalPages}</span>
-        <button type="button" class="btn btn-ghost btn-sm" data-table-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente</button>
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-sm" 
+          data-table-page="${currentPage - 1}" 
+          ${currentPage === 1 ? 'disabled' : ''}
+        >
+          Anterior
+        </button>
+        
+        <div class="data-table-page-numbers">
+          ${pagesButtonsHtml}
+        </div>
+
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-sm" 
+          data-table-page="${currentPage + 1}" 
+          ${currentPage === totalPages ? 'disabled' : ''}
+        >
+          Siguiente
+        </button>
       </div>
     </div>
   `;
@@ -90,5 +161,18 @@ export function bindDataTablePagination(container, onPageChange) {
       if (button.disabled) return;
       onPageChange(Number(button.dataset.tablePage));
     });
+  });
+}
+
+export function bindDataTableResize(renderCallback) {
+  if (typeof window === 'undefined') return;
+
+  let timeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(timeout);
+    // Debounce de 150ms para evitar re-renderizar decenas de veces mientras se arrastra la ventana
+    timeout = setTimeout(() => {
+      renderCallback();
+    }, 150);
   });
 }

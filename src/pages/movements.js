@@ -29,6 +29,15 @@ export async function renderMovements(container) {
   tableContainerEl = container.querySelector('#table-container');
   await refreshTable();
 
+  // Redibujar la tabla automáticamente cuando se redimensiona la ventana
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      refreshTable(tablePage);
+    }, 150);
+  });
+
   container.querySelector('#new-movement-btn').addEventListener('click', openMovementForm);
 }
 
