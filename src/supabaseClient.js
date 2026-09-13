@@ -7,6 +7,10 @@
 // en el código fuente.
 // ============================================================
 
+/**
+ * Valida la existencia de las variables de entorno necesarias para la conexión.
+ * Si no están definidas, interrumpe la ejecución mediante una excepción explicativa.
+ */
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -18,4 +22,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Inicializa y exporta la instancia principal del cliente de Supabase.
+ * Configura la persistencia de sesión, la renovación automática del token JWT
+ * y la detección de tokens de autenticación en la URL.
+ */
+export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});

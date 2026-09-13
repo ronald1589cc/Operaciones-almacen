@@ -396,28 +396,6 @@ svg.lucide,
   width: auto;
 }
 
-.app-body {
-  display: flex;
-  flex: 1;
-}
-
-.top-navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  background: var(--sidebar-bg);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  z-index: 10;
-}
-
-.navbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 .user-dropdown-container {
   position: relative;
   z-index: 100;
@@ -719,6 +697,17 @@ svg.lucide,
   box-sizing: border-box;
 }
 
+select.input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%233fb8b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>');
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px 16px !important;
+  padding-right: 36px !important;
+}
+
 .input:focus { 
   outline: none; 
   border-color: var(--cyan); 
@@ -771,6 +760,24 @@ svg.lucide,
   color: var(--text);
   font-family: var(--font-body);
   text-transform: none;
+}
+
+.data-table td .btn-danger.btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.data-table td .btn-danger.btn-sm svg,
+.data-table td .btn-danger.btn-sm [data-lucide] {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
 }
 
 /* ============================================================
@@ -1312,4 +1319,12 @@ svg.lucide,
 /* Esquina donde se cruzan el scroll horizontal y vertical */
 ::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+[data-theme="light"] * {
+  scrollbar-color: var(--cyan) rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.05);
 }

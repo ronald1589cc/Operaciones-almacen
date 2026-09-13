@@ -7,6 +7,11 @@
 
 import { supabaseClient } from '../supabaseClient.js';
 
+/**
+ * Obtiene el listado completo de movimientos de inventario registrados.
+ * Consulta la tabla inventory_movements realizando un join con inventory_items
+ * para incluir el SKU y nombre del artículo, ordenados cronológicamente de forma descendente.
+ */
 export async function listMovements() {
   const { data, error } = await supabaseClient
     .from('inventory_movements')
@@ -16,6 +21,11 @@ export async function listMovements() {
   return data;
 }
 
+/**
+ * Registra un nuevo movimiento de inventario en estado inicial "Pendiente".
+ * Crea el movimiento en la base de datos y, si se indica una ubicación y el tipo
+ * de movimiento lo requiere (Entrada o Salida), crea la reserva correspondiente de la posición.
+ */
 export async function createMovement({ item_id, inventory_id, movement_type, quantity, reason, notes, location_id }) {
   const { data: movement, error } = await supabaseClient
     .from('inventory_movements')
@@ -52,11 +62,21 @@ export async function createMovement({ item_id, inventory_id, movement_type, qua
   return movement;
 }
 
+/**
+ * Aprueba un movimiento de inventario pendiente mediante un procedimiento almacenado RPC.
+ * Ejecuta la función 'approve_movement' en Supabase para actualizar el estado del movimiento
+ * y aplicar los cambios correspondientes en el stock de inventario.
+ */
 export async function approveMovement(movementId) {
   const { error } = await supabaseClient.rpc('approve_movement', { p_movement_id: movementId });
   if (error) throw error;
 }
 
+/**
+ * Rechaza un movimiento de inventario pendiente mediante un procedimiento almacenado RPC.
+ * Ejecuta la función 'reject_movement' en Supabase para denegar la solicitud del movimiento
+ * y liberar las reservas de ubicación asociadas si las hubiera.
+ */
 export async function rejectMovement(movementId) {
   const { error } = await supabaseClient.rpc('reject_movement', { p_movement_id: movementId });
   if (error) throw error;

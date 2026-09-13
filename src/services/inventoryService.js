@@ -6,6 +6,11 @@
 
 import { supabaseClient } from '../supabaseClient.js';
 
+/**
+ * Obtiene el listado completo de existencias en el inventario.
+ * Realiza un join con la tabla inventory_items para incluir todos los datos del artículo
+ * asociado (SKU, nombre, etc.) y los ordena de forma descendente por la última actualización.
+ */
 export async function listInventoryWithItems() {
   const { data, error } = await supabaseClient
     .from('inventory')
@@ -15,6 +20,10 @@ export async function listInventoryWithItems() {
   return data;
 }
 
+/**
+ * Inserta un nuevo registro de existencias de inventario en la base de datos.
+ * Recibe los datos del registro a crear y retorna el objeto insertado.
+ */
 export async function createInventoryRecord(record) {
   const { data, error } = await supabaseClient
     .from('inventory')
@@ -25,6 +34,10 @@ export async function createInventoryRecord(record) {
   return data;
 }
 
+/**
+ * Actualiza los campos de un registro de inventario existente según su ID.
+ * Agrega automáticamente la fecha/hora actual en updated_at y retorna el registro modificado.
+ */
 export async function updateInventoryRecord(id, changes) {
   const { data, error } = await supabaseClient
     .from('inventory')

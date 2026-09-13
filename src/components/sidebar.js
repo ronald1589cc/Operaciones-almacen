@@ -6,6 +6,7 @@
 import { toggleTheme } from '../theme.js';
 import { getCurrentSession, getUserProfile } from '../services/authService.js';
 
+// Configuración de las secciones del menú con sus iconos y permisos de administración.
 const SECTIONS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
   { id: 'inventory', label: 'Inventario', icon: 'Boxes' },
@@ -15,6 +16,11 @@ const SECTIONS = [
   { id: 'itemsAudit', label: 'Auditoría de Artículos', icon: 'FileClock', adminOnly: true },
 ];
 
+/**
+ * Renderiza los botones de navegación y el selector de tema dentro del Sidebar,
+ * asignando los eventos para cambiar de vista, cerrar la barra en dispositivos móviles
+ * y ocultar/mostrar secciones exclusivas para administradores.
+ */
 export function renderSidebar(container, onNavigate) {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
@@ -79,11 +85,18 @@ export function renderSidebar(container, onNavigate) {
   updateAdminAccess(container);
 }
 
+/**
+ * Oculta la barra lateral y su fondo oscuro en pantallas móviles.
+ */
 function closeMobileSidebar() {
   document.querySelector('.sidebar')?.classList.remove('open');
   document.querySelector('#sidebar-overlay')?.classList.remove('show');
 }
 
+/**
+ * Consulta la sesión del usuario para mostrar u ocultar 
+ * los enlaces marcados como exclusivos de administrador.
+ */
 async function updateAdminAccess(container) {
   const adminLinks = container.querySelectorAll('.sidebar-link[data-admin-only]');
   const session = await getCurrentSession();
@@ -97,6 +110,9 @@ async function updateAdminAccess(container) {
   adminLinks.forEach((link) => (link.style.display = isAdmin ? '' : 'none'));
 }
 
+/**
+ * Actualiza el texto y el icono del botón de cambio de tema.
+ */
 function updateThemeButton(btn, theme) {
   const icon = btn.querySelector('.theme-icon');
   const label = btn.querySelector('.theme-label');

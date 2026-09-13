@@ -8,6 +8,11 @@ import { buttonHtml } from '../components/button.js';
 import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
 
+/**
+ * Inicializa y renderiza la vista del formulario de Inicio de Sesión.
+ * Inyecta el marcado del Login en el contenedor indicado y maneja
+ * los eventos de navegación a registro y autenticación de credenciales.
+ */
 export function renderLogin(container) {
   container.innerHTML = `
     <div class="auth-card">

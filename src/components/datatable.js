@@ -2,17 +2,16 @@
 // Componente: DataTable
 // Tabla generica reutilizable: recibe columnas, filas, y una
 // funcion opcional para renderizar la celda de "Acciones".
-//
-// columns: [{ key, label, render?(row) }]
-// rows: [{...}]
-// actions?: (row) => htmlString
-// pagination?: { page?, pageSize?, enabled? }
 // ============================================================
 
 const DEFAULT_ROW_HEIGHT = 52;
 const RESERVED_VERTICAL_SPACE = 330;
 const MIN_PAGE_SIZE = 5;
 
+/**
+ * Calcula automáticamente la cantidad de filas a mostrar por página 
+ * según el tamaño vertical disponible en la ventana del navegador.
+ */
 function getAutoPageSize() {
   if (typeof window === 'undefined') return 8;
 
@@ -20,10 +19,18 @@ function getAutoPageSize() {
   return Math.max(MIN_PAGE_SIZE, Math.floor(availableHeight / DEFAULT_ROW_HEIGHT));
 }
 
+/**
+ * Asegura que el número de página solicitado no sea menor a 1 
+ * ni mayor al total de páginas existentes.
+ */
 function clampPage(page, totalPages) {
   return Math.min(Math.max(Number(page) || 1, 1), totalPages);
 }
 
+/**
+ * Construye la lista de números de página y puntos suspensivos (...) 
+ * para mostrar una barra de navegación limpia cuando hay muchas páginas.
+ */
 function getPaginationRange(currentPage, totalPages, delta = 1) {
   const range = [];
   const rangeWithDots = [];
@@ -54,7 +61,10 @@ function getPaginationRange(currentPage, totalPages, delta = 1) {
   return rangeWithDots;
 }
 
-// Reemplaza tu función paginationHtml actual por esta:
+/**
+ * Genera el código HTML para los botones de la barra de paginación 
+ * (anterior, números de página y siguiente).
+ */
 function paginationHtml({ currentPage, totalPages, totalRows, startRow, endRow }) {
   if (totalPages <= 1) return '';
 
@@ -110,6 +120,10 @@ function paginationHtml({ currentPage, totalPages, totalRows, startRow, endRow }
   `;
 }
 
+/**
+ * Función principal que recibe la información (columnas, filas, acciones) 
+ * y arma la estructura HTML completa de la tabla y su paginación.
+ */
 export function dataTableHtml({ columns, rows, actions, pagination = {} }) {
   const colCount = columns.length + (actions ? 1 : 0);
   const paginationEnabled = pagination.enabled !== false;
@@ -155,6 +169,10 @@ export function dataTableHtml({ columns, rows, actions, pagination = {} }) {
   `;
 }
 
+/**
+ * Activa los eventos de clic en los botones de la paginación para 
+ * avisarle a la aplicación que debe cambiar a otra página.
+ */
 export function bindDataTablePagination(container, onPageChange) {
   container.querySelectorAll('[data-table-page]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -164,6 +182,10 @@ export function bindDataTablePagination(container, onPageChange) {
   });
 }
 
+/**
+ * Escucha el cambio de tamaño de la ventana para recalcular las filas 
+ * que caben en la pantalla sin saturar la computadora mientras se redimensiona.
+ */
 export function bindDataTableResize(renderCallback) {
   if (typeof window === 'undefined') return;
 

@@ -19,6 +19,11 @@ const SIZES = ['sm', 'md', 'lg'];
  * @param {string} [options.extraAttrs=''] - Atributos HTML adicionales (data-*, id, etc.)
  * @returns {string} HTML string del botón
  */
+
+/**
+ * Función que arma el código HTML de un botón según el texto, color, 
+ * tamaño e icono que le pases, evitando escribir la etiqueta a mano.
+ */
 export function buttonHtml(label, {
   variant = 'primary',
   size = 'md',

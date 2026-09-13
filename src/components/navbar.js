@@ -6,6 +6,11 @@
 import { getCurrentSession, getUserProfile, signOut } from '../services/authService.js';
 import { showToast } from './toast.js';
 
+/**
+ * Dibuja la estructura HTML de la Navbar, asigna los eventos para abrir 
+ * el menú móvil y el desplegable de usuario, gestiona el cierre de sesión 
+ * e inicia la carga de datos del perfil.
+ */
 export function renderNavbar(container, onNavigate) {
   container.innerHTML = `
     <div class="navbar-left">
@@ -85,6 +90,10 @@ export function renderNavbar(container, onNavigate) {
   });
 }
 
+/**
+ * Consulta la sesión y perfil del usuario actual para mostrar su nombre 
+ * y rol (ADMIN u OPERADOR) dentro de la tarjeta de la Navbar.
+ */
 async function refreshNavbarUser(container) {
   const userBox = container.querySelector('#sidebar-user');
   if (!userBox) return;

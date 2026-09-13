@@ -7,6 +7,11 @@
 import { listMovementAuditLog } from '../services/auditService.js';
 import { dataTableHtml } from '../components/dataTable.js';
 
+/**
+ * Inicializa y renderiza la vista de Auditoría de Movimientos.
+ * Obtiene el historial de transiciones de estados de movimientos 
+ * desde el servicio de auditoría e inyecta la tabla interactiva en el contenedor.
+ */
 export async function renderMovementsAudit(container) {
   const rows = await listMovementAuditLog();
 

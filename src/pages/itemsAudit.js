@@ -15,6 +15,10 @@ const ACTION_PILL_CLASS = { created: 'ok', updated: 'loading', deleted: 'error' 
 
 let currentRows = [];
 
+/**
+ * Inicializa y renderiza la vista completa de Auditoría de Artículos.
+ * Carga los registros desde el servicio y construye la tabla interactiva de auditoría.
+ */
 export async function renderItemsAudit(container) {
   currentRows = await listItemAuditLog();
 
@@ -59,6 +63,10 @@ export async function renderItemsAudit(container) {
   });
 }
 
+/**
+ * Busca un registro de auditoría por su ID y despliega una ventana modal 
+ * con la información detallada y la estructura JSON de los cambios (`changes`).
+ */
 function showDetailModal(rowId) {
   const row = currentRows.find((r) => r.id === rowId);
   if (!row) return;

@@ -11,6 +11,12 @@ import { getCurrentSession, getUserProfile } from '../services/authService.js';
  * @param {Object} [routeMeta={}] - Metadatos de la ruta (requiresAuth, isAuthPage, requiredRole)
  * @returns {Promise<{ allowed: boolean, redirectTo?: string, reason?: string }>}
  */
+
+/**
+ * Revisa si el usuario puede entrar a una página: lo manda al login si no 
+ * ha iniciado sesión, al dashboard si ya inició sesión e intenta ir al login, 
+ * o lo bloquea si no tiene el rol de administrador requerido.
+ */
 export async function canActivate(routeName, routeMeta = {}) {
   const session = await getCurrentSession();
 

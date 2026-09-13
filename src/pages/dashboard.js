@@ -7,6 +7,10 @@ import { kpiCardHtml } from '../components/kpiCard.js';
 import { formatCurrency, formatNumber } from '../utils/formatters.js';
 import { getStatusPillClass } from '../utils/status.js';
 
+/**
+ * Consulta las estadísticas del inventario y arma el HTML de la vista 
+ * con los totales principales y el historial reciente de movimientos.
+ */
 export async function renderDashboard(container) {
   const stats = await getDashboardStats();
 

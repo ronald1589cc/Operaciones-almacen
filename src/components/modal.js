@@ -6,10 +6,19 @@
 
 let modalRoot = null;
 
+/**
+ * Función que define y guarda el contenedor principal HTML 
+ * dentro del cual se dibujará la ventana modal.
+ */
+expor
 export function initModal(root) {
   modalRoot = root;
 }
 
+/**
+ * Función que abre la ventana modal con el contenido recibido, 
+ * agregando eventos para cerrarla al dar clic afuera o en botones de cierre.
+ */
 export function openModal(innerHtml) {
   modalRoot.innerHTML = `
     <div class="modal-overlay" id="modal-overlay">
@@ -26,6 +35,10 @@ export function openModal(innerHtml) {
   });
 }
 
+/**
+ * Función que cierra y remueve completamente el modal 
+ * limpiando el contenido del contenedor principal.
+ */
 export function closeModal() {
   if (modalRoot) modalRoot.innerHTML = '';
 }

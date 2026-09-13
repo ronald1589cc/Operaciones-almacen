@@ -5,7 +5,7 @@
 // ============================================================
 
 import { createInventoryRecord, listInventoryWithItems, updateInventoryRecord } from '../services/inventoryService.js';
-import { createItem, updateItem, deleteItem } from '../services/itemsService.js';
+import { createItem, updateItem, deactivateItem, reactivateItem } from '../services/itemsService.js';
 import { listLocations } from '../services/locationsService.js';
 import { dataTableHtml, bindDataTablePagination } from '../components/dataTable.js';
 import { buttonHtml } from '../components/button.js';
@@ -17,12 +17,71 @@ import { getStockStatus } from '../utils/status.js';
 let allRows = [];
 let tableContainerEl = null;
 let tablePage = 1;
+let showingInactive = false;
 
+/**
+ * Obtiene desde el servicio todos los registros de inventario e ítems,
+ * filtrando únicamente los que tienen estado activo (is_active !== false).
+ */
+async function loadActiveRows() {
+  const rows = await listInventoryWithItems();
+  return rows.filter((r) => r.inventory_items?.is_active !== false);
+}
+
+/**
+ * Obtiene desde el servicio todos los registros de inventario e ítems,
+ * filtrando únicamente los que tienen estado inactivo (is_active === false).
+ */
+async function loadInactiveRows() {
+  const rows = await listInventoryWithItems();
+  return rows.filter((r) => r.inventory_items?.is_active === false);
+}
+
+/**
+ * Restablece todos los inputs y selectores de filtrado a sus valores por defecto
+ * y vuelve a renderizar la tabla desde la página 1 con todos los datos.
+ */
+function clearFilters(container) {
+  container.querySelector('#search-input').value = '';
+  container.querySelector('#category-filter').value = '';
+  container.querySelector('#supplier-filter').value = '';
+  container.querySelector('#stock-filter').value = '';
+  tablePage = 1;
+  renderTable(allRows);
+}
+
+/**
+ * Alterna el estado de la vista entre "Activos" e "Inactivos".
+ * Cambia la apariencia del botón (colores y texto) y recarga los datos correspondientes.
+ */
+async function toggleInactiveView(container) {
+  showingInactive = !showingInactive;
+  const btn = container.querySelector('#toggle-inactive-btn');
+  btn.textContent = showingInactive ? 'Mostrar activos' : 'Mostrar inactivos';
+  btn.classList.toggle('btn-danger', !showingInactive);
+  btn.classList.toggle('btn-primary', showingInactive);
+  tablePage = 1;
+
+  if (showingInactive) {
+    renderTable(await loadInactiveRows());
+  } else {
+    allRows = await loadActiveRows();
+    renderTable(allRows);
+  }
+}
+
+/**
+ * Inicializa y monta toda la vista de Inventario dentro del contenedor especificado.
+ * Renderiza el HTML estructural (título, barra de herramientas, buscador, filtros) y sus eventos.
+ */
 export async function renderInventory(container) {
-  allRows = await listInventoryWithItems();
+  allRows = await loadActiveRows();
 
   container.innerHTML = `
-    <h2 class="page-title">Inventario</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 class="page-title" style="margin-bottom: 0;">Inventario</h2>
+      ${buttonHtml('Mostrar inactivos', { variant: 'danger', extraAttrs: 'id="toggle-inactive-btn"' })}
+    </div>
     <div class="toolbar">
       <input type="text" id="search-input" class="input" placeholder="Buscar por artículo o SKU..." />
       <select id="category-filter" class="input"><option value="">Todas las categorías</option></select>
@@ -32,6 +91,7 @@ export async function renderInventory(container) {
         <option value="low">Bajo mínimo</option>
         <option value="ok">Normal</option>
       </select>
+      ${buttonHtml('Limpiar filtros', { extraAttrs: 'id="clear-filters-btn"' })}
       ${buttonHtml('+ Nuevo artículo', { extraAttrs: 'id="new-item-btn"' })}
     </div>
     <div id="table-container"></div>
@@ -55,8 +115,14 @@ export async function renderInventory(container) {
   container.querySelector('#supplier-filter').addEventListener('change', () => applyFilters(container));
   container.querySelector('#stock-filter').addEventListener('change', () => applyFilters(container));
   container.querySelector('#new-item-btn').addEventListener('click', () => openItemForm());
+  container.querySelector('#clear-filters-btn').addEventListener('click', () => clearFilters(container));
+  container.querySelector('#toggle-inactive-btn').addEventListener('click', () => toggleInactiveView(container));
 }
 
+/**
+ * Extrae dinámicamente las categorías y proveedores únicos de los registros (`allRows`)
+ * y rellena las opciones dentro de los elementos `<select>` correspondientes.
+ */
 function populateFilterOptions(container) {
   const categories = [...new Set(allRows.map((r) => r.inventory_items?.category).filter(Boolean))];
   const suppliers = [...new Set(allRows.map((r) => r.inventory_items?.supplier).filter(Boolean))];
@@ -68,6 +134,10 @@ function populateFilterOptions(container) {
   suppliers.forEach((s) => supplierSelect.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
 }
 
+/**
+ * Lee los valores del buscador por texto, filtro de categoría, proveedor y estado de stock;
+ * procesa `allRows` para obtener solo los registros coincidentes y solicita re-renderizar la tabla.
+ */
 function applyFilters(container) {
   const search = container.querySelector('#search-input').value.trim().toLowerCase();
   const category = container.querySelector('#category-filter').value;
@@ -90,6 +160,10 @@ function applyFilters(container) {
   renderTable(filtered);
 }
 
+/**
+ * Genera el componente visual de la tabla de datos (`dataTableHtml`) con sus respectivas columnas,
+ * badges de estado, formateo de moneda/números y botones de acción; además vincula los listeners a los botones.
+ */
 function renderTable(rows, page = tablePage) {
   tablePage = page;
   tableContainerEl.innerHTML = dataTableHtml({
@@ -105,6 +179,9 @@ function renderTable(rows, page = tablePage) {
         key: 'status',
         label: 'Estado',
         render: (r) => {
+          if (r.inventory_items?.is_active === false) {
+            return '<span class="pill error">Inactivo</span>';
+          }
           const s = getStockStatus(r.quantity, r.min_stock);
           return `<span class="pill ${s.className}">${s.text}</span>`;
         },
@@ -112,11 +189,14 @@ function renderTable(rows, page = tablePage) {
     ],
     rows,
     pagination: { page: tablePage },
-    actions: (r) => `
-      ${buttonHtml('Editar', { variant: 'ghost', size: 'sm', extraAttrs: `data-edit="${r.id}"` })}
-      ${buttonHtml('Editar stock', { variant: 'ghost', size: 'sm', extraAttrs: `data-edit-stock="${r.id}"` })}
-      ${buttonHtml('Eliminar', { variant: 'danger', size: 'sm', extraAttrs: `data-delete="${r.item_id}"` })}
-    `,
+    actions: (r) =>
+      showingInactive
+        ? buttonHtml('Reactivar', { variant: 'ghost', size: 'sm', extraAttrs: `data-reactivate="${r.item_id}"` })
+        : `
+          ${buttonHtml('Editar', { variant: 'ghost', size: 'sm', extraAttrs: `data-edit="${r.id}"` })}
+          ${buttonHtml('Editar stock', { variant: 'ghost', size: 'sm', extraAttrs: `data-edit-stock="${r.id}"` })}
+          ${buttonHtml('<i data-lucide="trash"></i>', { variant: 'danger', size: 'sm', extraAttrs: `data-deactivate="${r.item_id}"` })}
+        `,
   });
 
   bindDataTablePagination(tableContainerEl, (nextPage) => renderTable(rows, nextPage));
@@ -135,11 +215,19 @@ function renderTable(rows, page = tablePage) {
     });
   });
 
-  tableContainerEl.querySelectorAll('[data-delete]').forEach((btn) => {
-    btn.addEventListener('click', () => handleDelete(btn.dataset.delete));
+  tableContainerEl.querySelectorAll('[data-deactivate]').forEach((btn) => {
+    btn.addEventListener('click', () => handleDeactivate(btn.dataset.deactivate));
+  });
+
+  tableContainerEl.querySelectorAll('[data-reactivate]').forEach((btn) => {
+    btn.addEventListener('click', () => handleReactivate(btn.dataset.reactivate));
   });
 }
 
+/**
+ * Despliega una ventana modal con un formulario para Crear un nuevo artículo o Editar uno existente.
+ * Procesa el envío del formulario mediante la API (createItem / updateItem) y refresca la vista.
+ */
 function openItemForm(row = null) {
   const item = row?.inventory_items ?? {};
   const isEdit = Boolean(row);
@@ -152,6 +240,8 @@ function openItemForm(row = null) {
       <label>Categoría <input name="category" class="input" value="${item.category ?? ''}" /></label>
       <label>Descripción <textarea name="description" class="input">${item.description ?? ''}</textarea></label>
       <div class="form-row">
+        <label>Marca <input name="brand" class="input" value="${item.brand ?? ''}" /></label>
+        <label>Talla <input name="size" class="input" value="${item.size ?? ''}" /></label>
         <label>Peso <input name="weight" type="number" step="0.01" class="input" value="${item.weight ?? ''}" /></label>
         <label>Largo <input name="length" type="number" step="0.01" class="input" value="${item.length ?? ''}" /></label>
         <label>Ancho <input name="width" type="number" step="0.01" class="input" value="${item.width ?? ''}" /></label>
@@ -194,7 +284,7 @@ function openItemForm(row = null) {
         showToast('Artículo creado');
       }
       closeModal();
-      allRows = await listInventoryWithItems();
+      allRows = await loadActiveRows();
       tablePage = 1;
       renderTable(allRows);
     } catch (err) {
@@ -204,11 +294,8 @@ function openItemForm(row = null) {
 }
 
 /**
- * Modal para "Modificar información del inventario": ubicación,
- * stock mínimo y stock máximo. A propósito NO incluye "quantity" —
- * esa cantidad solo debe cambiar mediante movimientos aprobados
- * (Entrada/Salida/Ajuste), para no romper la trazabilidad del
- * workflow de aprobación.
+ * Abre una ventana modal para editar parámetros propios del inventario
+ * (ubicación física, stock mínimo y máximo), sin permitir modificar directamente las existencias (quantity).
  */
 async function openStockForm(row) {
   const locations = await listLocations();
@@ -253,26 +340,62 @@ async function openStockForm(row) {
       });
       showToast('Información de inventario actualizada');
       closeModal();
-      allRows = await listInventoryWithItems();
+      allRows = await loadActiveRows();
       renderTable(allRows);
     } catch (err) {
-      showToast(err.message, 'error');
+      const isDuplicateLocation =
+        err.code === '23505' || err.message?.includes('inventory_location_id_unique');
+
+      showToast(
+        isDuplicateLocation
+          ? 'Esta ubicación ya está ocupada por otro artículo. Elige una diferente.'
+          : err.message,
+        'error'
+      );
     }
   });
 }
 
+/**
+ * Crea automáticamente el registro inicial de inventario en cero (quantity: 0, min_stock: 0)
+ * para un artículo recién creado en la base de datos.
+ */
 async function createInventoryForItem(itemId) {
   await createInventoryRecord({ item_id: itemId, quantity: 0, min_stock: 0 });
 }
 
-async function handleDelete(itemId) {
-  if (!confirm('¿Eliminar este artículo? Esta acción no se puede deshacer.')) return;
+/**
+ * Pide confirmación al usuario para realizar la desactivación (baja lógica) de un artículo.
+ * Ejecuta la baja en la BD, notifica mediante un Toast y actualiza la lista.
+ */
+async function handleDeactivate(itemId) {
+  if (!confirm('¿Desactivar este artículo? Se ocultará como retirado, pero conservará su historial y podrás reactivarlo después.')) return;
   try {
-    await deleteItem(itemId);
-    showToast('Artículo eliminado');
-    allRows = await listInventoryWithItems();
+    await deactivateItem(itemId);
+    showToast('Artículo desactivado');
+    allRows = await loadActiveRows();
     tablePage = 1;
     renderTable(allRows);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+/**
+ * Reactiva un artículo que previamente había sido dado de baja (is_active = false).
+ * Actualiza la base de datos, muestra una notificación y refresca la lista de inactivos.
+ */
+async function handleReactivate(itemId) {
+  try {
+    await reactivateItem(itemId);
+    showToast('Artículo reactivado');
+    tablePage = 1;
+    if (showingInactive) {
+      renderTable(await loadInactiveRows());
+    } else {
+      allRows = await loadActiveRows();
+      renderTable(allRows);
+    }
   } catch (err) {
     showToast(err.message, 'error');
   }

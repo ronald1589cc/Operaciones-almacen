@@ -8,6 +8,11 @@ import { buttonHtml } from '../components/button.js';
 import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
 
+/**
+ * Monta e inicializa la vista del formulario de Registro de Usuario.
+ * Renderiza el HTML de la interfaz en el contenedor suministrado y
+ * gestiona la navegación al login y el envío de datos para crear la cuenta.
+ */
 export function renderRegister(container) {
   container.innerHTML = `
     <div class="auth-card">

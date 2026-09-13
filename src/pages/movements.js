@@ -17,6 +17,10 @@ import { getStatusPillClass } from '../utils/status.js';
 let tableContainerEl = null;
 let tablePage = 1;
 
+/**
+ * Monta e inicializa la vista principal del módulo de Movimientos.
+ * Inyecta el encabezado, la barra de herramientas y la estructura contenedora.
+ */
 export async function renderMovements(container) {
   container.innerHTML = `
     <h2 class="page-title">Movimientos</h2>
@@ -41,6 +45,10 @@ export async function renderMovements(container) {
   container.querySelector('#new-movement-btn').addEventListener('click', openMovementForm);
 }
 
+/**
+ * Obtiene del servicio la lista de movimientos y reconstruye el marcado de la tabla,
+ * asignando las opciones de paginación y las acciones por cada fila.
+ */
 async function refreshTable(page = tablePage) {
   tablePage = page;
   const movements = await listMovements();
@@ -76,6 +84,10 @@ async function refreshTable(page = tablePage) {
   });
 }
 
+/**
+ * Procesa la llamada a la función RPC correspondiente (aprobar o rechazar),
+ * notifica el resultado mediante un toast y refresca el listado.
+ */
 async function handleDecision(action, movementId, successMessage) {
   try {
     await action(movementId);
@@ -89,6 +101,10 @@ async function handleDecision(action, movementId, successMessage) {
   }
 }
 
+/**
+ * Obtiene la lista de inventarios/artículos disponibles y abre el modal 
+ * con el formulario para registrar una Entrada, Salida o Ajuste de stock.
+ */
 async function openMovementForm() {
   const inventoryRows = await listInventoryWithItems();
 
