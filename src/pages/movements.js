@@ -7,7 +7,7 @@
 
 import { listMovements, createMovement, approveMovement, rejectMovement } from '../services/movementsService.js';
 import { listInventoryWithItems } from '../services/inventoryService.js';
-import { dataTableHtml, bindDataTablePagination } from '../components/dataTable.js';
+import { dataTableHtml, bindDataTablePagination } from '../components/datatable.js';
 import { buttonHtml } from '../components/button.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';

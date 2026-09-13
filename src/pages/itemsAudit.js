@@ -6,7 +6,7 @@
 // ============================================================
 
 import { listItemAuditLog } from '../services/auditService.js';
-import { dataTableHtml } from '../components/dataTable.js';
+import { dataTableHtml } from '../components/datatable.js';
 import { openModal } from '../components/modal.js';
 
 const TABLE_LABELS = { inventory_items: 'Artículo', inventory: 'Stock' };

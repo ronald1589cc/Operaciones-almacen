@@ -7,7 +7,7 @@
 import { createInventoryRecord, listInventoryWithItems, updateInventoryRecord } from '../services/inventoryService.js';
 import { createItem, updateItem, deactivateItem, reactivateItem } from '../services/itemsService.js';
 import { listLocations } from '../services/locationsService.js';
-import { dataTableHtml, bindDataTablePagination } from '../components/dataTable.js';
+import { dataTableHtml, bindDataTablePagination } from '../components/datatable.js';
 import { buttonHtml } from '../components/button.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';

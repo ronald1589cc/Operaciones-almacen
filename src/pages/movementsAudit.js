@@ -5,7 +5,7 @@
 // ============================================================
 
 import { listMovementAuditLog } from '../services/auditService.js';
-import { dataTableHtml } from '../components/dataTable.js';
+import { dataTableHtml } from '../components/datatable.js';
 
 /**
  * Inicializa y renderiza la vista de Auditoría de Movimientos.

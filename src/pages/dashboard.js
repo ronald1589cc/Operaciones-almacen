@@ -3,7 +3,7 @@
 // ============================================================
 
 import { getDashboardStats } from '../services/dashboardService.js';
-import { kpiCardHtml } from '../components/kpiCard.js';
+import { kpiCardHtml } from '../components/kpicard.js';
 import { formatCurrency, formatNumber } from '../utils/formatters.js';
 import { getStatusPillClass } from '../utils/status.js';
 
