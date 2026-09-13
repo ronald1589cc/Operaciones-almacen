@@ -10,7 +10,6 @@ let modalRoot = null;
  * Función que define y guarda el contenedor principal HTML 
  * dentro del cual se dibujará la ventana modal.
  */
-expor
 export function initModal(root) {
   modalRoot = root;
 }
