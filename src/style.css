@@ -762,24 +762,6 @@ select.input {
   text-transform: none;
 }
 
-.data-table td .btn-danger.btn-sm {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  vertical-align: middle;
-}
-
-.data-table td .btn-danger.btn-sm svg,
-.data-table td .btn-danger.btn-sm [data-lucide] {
-  display: block;
-  width: 14px;
-  height: 14px;
-  margin: 0;
-}
-
 /* ============================================================
    PILLS (ESTADOS)
    ============================================================ */
